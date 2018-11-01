@@ -18,6 +18,7 @@ import random, util
 
 from game import Agent
 
+
 class ReflexAgent(Agent):
     """
       A reflex agent chooses an action at each choice point by examining
@@ -27,7 +28,6 @@ class ReflexAgent(Agent):
       it in any way you see fit, so long as you don't touch our method
       headers.
     """
-
 
     def getAction(self, gameState):
         """
@@ -45,7 +45,7 @@ class ReflexAgent(Agent):
         scores = [self.evaluationFunction(gameState, action) for action in legalMoves]
         bestScore = max(scores)
         bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
-        chosenIndex = random.choice(bestIndices) # Pick randomly among the best
+        chosenIndex = random.choice(bestIndices)  # Pick randomly among the best
 
         "Add more of your code here if you want to"
 
@@ -76,6 +76,7 @@ class ReflexAgent(Agent):
         "*** YOUR CODE HERE ***"
         return successorGameState.getScore()
 
+
 def scoreEvaluationFunction(currentGameState):
     """
       This default evaluation function just returns the score of the state.
@@ -85,6 +86,7 @@ def scoreEvaluationFunction(currentGameState):
       (not reflex agents).
     """
     return currentGameState.getScore()
+
 
 class MultiAgentSearchAgent(Agent):
     """
@@ -101,10 +103,11 @@ class MultiAgentSearchAgent(Agent):
       is another abstract class.
     """
 
-    def __init__(self, evalFn = 'scoreEvaluationFunction', depth = '2'):
-        self.index = 0 # Pacman is always agent index 0
+    def __init__(self, evalFn='scoreEvaluationFunction', depth='2'):
+        self.index = 0  # Pacman is always agent index 0
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
+
 
 class MinimaxAgent(MultiAgentSearchAgent):
     """
@@ -128,46 +131,104 @@ class MinimaxAgent(MultiAgentSearchAgent):
           gameState.getNumAgents():
             Returns the total number of agents in the game
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+         # P A C M A N  Point of View
+        maxValue = float("-inf")
+        maxAction = Directions.STOP
+        for action in gameState.getLegalActions(0):
+            nextState = gameState.generateSuccessor(0, action)
+
+            nextValue = self.minimax(nextState, 0, 1)
+            if nextValue > maxValue:
+                maxValue = nextValue
+                maxAction = action
+        return maxAction
+
+    def minimax(self, state, depth, agentIndex):
+        if depth == self.depth or state.isWin() or state.isLose() or state.getLegalActions(agentIndex) == 0:
+            return self.evaluationFunction(state)
+        if agentIndex < 1:
+            return self.max_value(state, depth)
+        else:
+            return self.min_value(state, depth, agentIndex)
+
+    # P A C M A N
+    def max_value(self, state, currentDepth):
+        v = float("-inf")
+        for action in state.getLegalActions(0):
+            v = max(v, self.minimax(state.generateSuccessor(0, action), currentDepth, 1))
+        return v
+
+    # G H O S T
+    def min_value(self, state, currentDepth, agentIndex):
+        v = float("inf")
+
+        for action in state.getLegalActions(agentIndex):
+            if agentIndex == state.getNumAgents()-1:
+                v = min(v, self.minimax(state.generateSuccessor(agentIndex, action), currentDepth + 1, 0))
+
+            else:
+                v = min(v, self.minimax(state.generateSuccessor(agentIndex, action),currentDepth,agentIndex + 1))
+        return v
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
       Your minimax agent with alpha-beta pruning (question 3)
     """
-
     def getAction(self, gameState):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.alpha_beta(gameState)
 
-class ExpectimaxAgent(MultiAgentSearchAgent):
-    """
-      Your expectimax agent (question 4)
-    """
+    def alpha_beta(self, state):
+        maxValue = float("-inf")
+        alpha = float("-inf")
+        beta = float("inf")
+        maxAction = Directions.STOP
 
-    def getAction(self, gameState):
-        """
-          Returns the expectimax action using self.depth and self.evaluationFunction
+        # Iterate throguh legal actions down the three
+        for action in state.getLegalActions(0):
+            nextState = state.generateSuccessor(0, action)
+            nextValue = self.getValue(nextState, 0, 1, alpha, beta)
+            if nextValue > maxValue:
+                maxValue = nextValue
+                maxAction = action
+            alpha = max(alpha, maxValue)
+        return maxAction
 
-          All ghosts should be modeled as choosing uniformly at random from their
-          legal moves.
-        """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+    # Help function
+    def getValue(self, gameState, currentDepth, agentIndex, alpha, beta):
+        if currentDepth == self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        elif agentIndex == 0:
+            return self.max_value(gameState, currentDepth, alpha, beta)
+        else:
+            return self.min_value(gameState, currentDepth, agentIndex, alpha, beta)
 
-def betterEvaluationFunction(currentGameState):
-    """
-      Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
-      evaluation function (question 5).
+    # P A C M A N
+    def max_value(self, gameState, currentDepth, alpha, beta):
+        maxVal = float("-inf")
+        for action in gameState.getLegalActions(0):
+            # find max value for pacman
+            maxVal = max(maxVal,
+                         self.getValue(gameState.generateSuccessor(0, action), currentDepth, 1, alpha, beta))
+            # check for possible pruning
+            if maxVal > beta:
+                return maxVal
+            alpha = max(alpha, maxVal)
+        return maxVal
 
-      DESCRIPTION: <write something here so we know what you did>
-    """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
-
-# Abbreviation
-better = betterEvaluationFunction
-
+    # G H O S T
+    def min_value(self, gameState, currentDepth, agentIndex, alpha, beta):
+        minVal = float("inf")
+        for action in gameState.getLegalActions(agentIndex):
+            if agentIndex == gameState.getNumAgents() - 1:
+                minVal = min(minVal,
+                             self.getValue(gameState.generateSuccessor(agentIndex, action), currentDepth + 1, 0, alpha, beta))
+            else:
+                minVal = min(minVal, self.getValue(gameState.generateSuccessor(agentIndex, action), currentDepth, agentIndex + 1, alpha, beta))
+            if minVal < alpha:
+                return minVal
+            beta = min(beta, minVal)
+        return minVal
