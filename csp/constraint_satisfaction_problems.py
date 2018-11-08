@@ -59,7 +59,7 @@ class CSP:
 
         # Next, filter this list of value pairs through the function
         # 'filter_function', so that only the legal value pairs remain
-        self.constraints[i][j] = filter(lambda value_pair: filter_function(*value_pair), self.constraints[i][j])
+        self.constraints[i][j] = list(filter(lambda value_pair: filter_function(*value_pair), self.constraints[i][j]))
 
     def add_all_different_constraint(self, variables):
         """Add an Alldiff constraint between all of the variables in the
@@ -168,7 +168,7 @@ def create_sudoku_csp(filename):
     file named 'filename' in the current directory.
     """
     csp = CSP()
-    board = map(lambda x: x.strip(), open(filename, 'r'))
+    board = list(map(lambda x: x.strip(), open(filename, 'r')))
 
     for row in range(9):
         for col in range(9):
@@ -199,9 +199,9 @@ def print_sudoku_solution(solution):
     """
     for row in range(9):
         for col in range(9):
-            print solution['%d-%d' % (row, col)][0],
+            print(solution['%d-%d' % (row, col)][0])
             if col == 2 or col == 5:
-                print '|',
-        print
+                print('|')
+
         if row == 2 or row == 5:
-            print '------+-------+------'
+            print('------+-------+------')
