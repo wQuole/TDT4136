@@ -5,7 +5,7 @@ Introduction to Artificial Intelligence
 
 **Board-1-1.txt**
 
-![1541694642398](https://github.com/wQuole/TDT4136/blob/master/astar_algorithm/imgs/board1-1.png?raw=true
+![Board-1-1](https://github.com/wQuole/TDT4136/blob/master/astar_algorithm/imgs/board1-1.png)
 
 **Board-1-2.txt**
 
