@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import copy
 import itertools
@@ -111,7 +111,7 @@ class CSP:
         iterations of the loop.
         """
         # TODO: IMPLEMENT THIS
-        while len(assignment.keys()) > 1:
+        pass
             
 
     def select_unassigned_variable(self, assignment):
@@ -129,8 +129,15 @@ class CSP:
         the lists of legal values for each undecided variable. 'queue'
         is the initial queue of arcs that should be visited.
         """
-        # TODO: IMPLEMENT THIS
-        pass
+        while len(queue) > 0:
+            xi, xj = queue.pop(0)
+            if self.revise(assignment, xi, xj):
+                if len(assignment[xi]) == 0:
+                    return False
+                for xk, _ in self.get_all_neighboring_arcs(xi):
+                    queue.add((xk, xi))
+        return True
+
 
     def revise(self, assignment, i, j):
         """The function 'Revise' from the pseudocode in the textbook.
@@ -141,8 +148,20 @@ class CSP:
         between i and j, the value should be deleted from i's list of
         legal values in 'assignment'.
         """
-        # TODO: IMPLEMENT THIS
-        pass
+        dc = copy.deepcopy(assignment)
+        revised = False
+        for x in dc[i]:
+            # Find all combinations of (xi, xj)
+            arcs = list(self.get_all_possible_pairs(list(x), dc[j]))
+            print(type(arcs))
+            if len(list(filter(lambda a: a in arcs, self.constraints[i][j]))) == 0:
+                revised = True
+                dc.remove(x)
+        assignment[i] = dc
+        return revised
+
+csp = CSP()
+csp.revise(['red', 'green', 'blue'], 1, 1)
 
 
 def create_map_coloring_csp():
@@ -205,3 +224,10 @@ def print_sudoku_solution(solution):
 
         if row == 2 or row == 5:
             print('------+-------+------')
+
+
+def main():
+    board_paths = [("Easy", "sudokus/easy.txt"),
+                   ("Medium", "sudokus/medium.txt"),
+                   ("Hard", "sudokus/hard.txt"),
+                   ("Very hard", "sudokus/veryhard.txt")]
