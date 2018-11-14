@@ -118,14 +118,16 @@ class CSP:
         if sum(len(value) for value in assignment.values()) == len(assignment):
             return assignment
 
-        # Not complete, continue recursively
+        # Not complete, continue with an unfinished var
         var = self.select_unassigned_variable(assignment)
         self.amount_of_backtracs += 1
 
+        # Iterate over values in var
         for value in assignment[var]:
             assignment_copy = copy.deepcopy(assignment)
             assignment_copy[var] = value
             if self.inference(assignment_copy, self.get_all_arcs()):
+                # Inference occoured, now backtrack recursively
                 result = self.backtrack(assignment_copy)
                 if result: return result
 
@@ -139,6 +141,8 @@ class CSP:
         in 'assignment' that have not yet been decided, i.e. whose list
         of legal values has a length greater than one.
         """
+        # Could select random key
+        # However the key with the smallest amount of values is a good approach
         return min(assignment.keys(),
                    key=lambda var: float("inf") if len(assignment[var]) < 2 else len(assignment[var]))
 
@@ -152,6 +156,7 @@ class CSP:
             xi, xj = queue.pop(0)
             if self.revise(assignment, xi, xj):
                 if len(assignment[xi]) == 0:
+                    # No values for xi in assignment --> return False
                     return False
                 for xk, _ in self.get_all_neighboring_arcs(xi):
                     if xk != xj:
@@ -168,11 +173,14 @@ class CSP:
         between i and j, the value should be deleted from i's list of
         legal values in 'assignment'.
         """
+
+        # Create a copy of the
         dc = copy.deepcopy(assignment[i])
         revised = False
         for x in dc:
             # Find all combinations of (xi, xj)
             arcs = list(self.get_all_possible_pairs(list(x), assignment[j]))
+            # If no constraints exists in the arcs, we remove x from the domain
             if len(list(filter(lambda a: a in arcs, self.constraints[i][j]))) == 0:
                 revised = True
                 dc.remove(x)
