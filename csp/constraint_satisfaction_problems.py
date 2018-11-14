@@ -16,6 +16,10 @@ class CSP:
         # the variable pair (i, j)
         self.constraints = {}
 
+        # Number of failed backtracks done in CSP.backtracking_search()
+        self.failed_amount_of_backtracks = 0
+        self.amount_of_backtracs = 0
+
     def add_variable(self, name, domain):
         """Add a new variable to the CSP. 'name' is the variable name
         and 'domain' is a list of the legal values for the variable.
@@ -110,9 +114,24 @@ class CSP:
         assignments and inferences that took place in previous
         iterations of the loop.
         """
-        # TODO: IMPLEMENT THIS
-        pass
-            
+        # Check if complete
+        if sum(len(value) for value in assignment.values()) == len(assignment):
+            return assignment
+
+        # Not complete, continue recursively
+        var = self.select_unassigned_variable(assignment)
+        self.amount_of_backtracs += 1
+
+        for value in assignment[var]:
+            assignment_copy = copy.deepcopy(assignment)
+            assignment_copy[var] = value
+            if self.inference(assignment_copy, self.get_all_arcs()):
+                result = self.backtrack(assignment_copy)
+                if result: return result
+
+        # Backtracked failed
+        self.failed_amount_of_backtracks += 1
+        return False
 
     def select_unassigned_variable(self, assignment):
         """The function 'Select-Unassigned-Variable' from the pseudocode
@@ -120,8 +139,8 @@ class CSP:
         in 'assignment' that have not yet been decided, i.e. whose list
         of legal values has a length greater than one.
         """
-        # TODO: IMPLEMENT THIS
-        pass
+        return min(assignment.keys(),
+                   key=lambda var: float("inf") if len(assignment[var]) < 2 else len(assignment[var]))
 
     def inference(self, assignment, queue):
         """The function 'AC-3' from the pseudocode in the textbook.
@@ -135,7 +154,8 @@ class CSP:
                 if len(assignment[xi]) == 0:
                     return False
                 for xk, _ in self.get_all_neighboring_arcs(xi):
-                    queue.add((xk, xi))
+                    if xk != xj:
+                        queue.append((xk, xi))
         return True
 
 
@@ -148,20 +168,16 @@ class CSP:
         between i and j, the value should be deleted from i's list of
         legal values in 'assignment'.
         """
-        dc = copy.deepcopy(assignment)
+        dc = copy.deepcopy(assignment[i])
         revised = False
-        for x in dc[i]:
+        for x in dc:
             # Find all combinations of (xi, xj)
-            arcs = list(self.get_all_possible_pairs(list(x), dc[j]))
-            print(type(arcs))
+            arcs = list(self.get_all_possible_pairs(list(x), assignment[j]))
             if len(list(filter(lambda a: a in arcs, self.constraints[i][j]))) == 0:
                 revised = True
                 dc.remove(x)
         assignment[i] = dc
         return revised
-
-csp = CSP()
-csp.revise(['red', 'green', 'blue'], 1, 1)
 
 
 def create_map_coloring_csp():
@@ -216,18 +232,36 @@ def print_sudoku_solution(solution):
     the method CSP.backtracking_search(), into a human readable
     representation.
     """
+
     for row in range(9):
         for col in range(9):
-            print(solution['%d-%d' % (row, col)][0])
+            val = solution['%d-%d' % (row, col)][0]
+            print(val, end=" ")
             if col == 2 or col == 5:
-                print('|')
-
+                print('| ', end=""),
         if row == 2 or row == 5:
-            print('------+-------+------')
+            print('\n------+-------+------')
+        else:
+            print("\n")
+
 
 
 def main():
+    # Make CSP with variables, domain and constraints
     board_paths = [("Easy", "sudokus/easy.txt"),
                    ("Medium", "sudokus/medium.txt"),
                    ("Hard", "sudokus/hard.txt"),
                    ("Very hard", "sudokus/veryhard.txt")]
+    for path in board_paths:
+        csp = create_sudoku_csp(path[1])
+
+        # Print solution
+        print("\n")
+        dif = path[0]
+        name = path[1].split("/")[-1]
+        print("Difficulty:", dif, "\tFile:",name)
+        print_sudoku_solution(csp.backtracking_search())
+        print("backtracked", csp.amount_of_backtracs)
+        print("failed backtracked", csp.failed_amount_of_backtracks)
+
+main()
